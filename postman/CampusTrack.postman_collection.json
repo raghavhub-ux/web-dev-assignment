@@ -1,0 +1,360 @@
+{
+  "info": {
+    "_postman_id": "7b8f9a2e-4321-4f90-bc89-1123456789ab",
+    "name": "CampusTrack API",
+    "description": "Student Assignment & Deadline Management REST API collection. Includes authentication flow (token session management) and CRUD operations on assignments.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:4000",
+      "type": "string"
+    },
+    {
+      "key": "bearerToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "assignmentId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/",
+          "host": ["{{baseUrl}}"],
+          "path": [""]
+        },
+        "description": "Verify API service availability."
+      },
+      "response": []
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "1. Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"alex_student\",\n  \"email\": \"alex.student@campustrack.edu\",\n  \"password\": \"Password123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "register"]
+            },
+            "description": "Create a new student user account."
+          },
+          "response": []
+        },
+        {
+          "name": "2. Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "var token = jsonData.token || (jsonData.data && jsonData.data.token);",
+                  "if (token) {",
+                  "    pm.collectionVariables.set(\"bearerToken\", token);",
+                  "    console.log(\"Saved bearerToken to collection variable:\", token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"alex.student@campustrack.edu\",\n  \"password\": \"Password123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "login"]
+            },
+            "description": "Authenticates user and saves the returned bearer token to collection variable."
+          },
+          "response": []
+        },
+        {
+          "name": "3. Logout",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bearerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "logout"]
+            },
+            "description": "Revokes the active bearer token session from database."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Assignments",
+      "item": [
+        {
+          "name": "1. Create Assignment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.data && jsonData.data._id) {",
+                  "    pm.collectionVariables.set(\"assignmentId\", jsonData.data._id);",
+                  "    console.log(\"Saved assignmentId to collection variable:\", jsonData.data._id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bearerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Java OOP Lab Assignment\",\n  \"subject\": \"Java\",\n  \"description\": \"Implement inheritance and interfaces\",\n  \"dueDate\": \"2026-11-20T23:59:00+05:30\",\n  \"priority\": \"High\",\n  \"status\": \"Pending\",\n  \"category\": \"Lab\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/assignments",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "assignments"]
+            },
+            "description": "Create a new assignment for the authenticated student."
+          },
+          "response": []
+        },
+        {
+          "name": "2. List Assignments",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bearerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/assignments",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "assignments"]
+            },
+            "description": "Get all assignments for logged-in user, sorted by ascending due date (max 100)."
+          },
+          "response": []
+        },
+        {
+          "name": "3. List Assignments (With Filters)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bearerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/assignments?status=Pending&priority=High&subject=Java",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "assignments"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "Pending"
+                },
+                {
+                  "key": "priority",
+                  "value": "High"
+                },
+                {
+                  "key": "subject",
+                  "value": "Java"
+                }
+              ]
+            },
+            "description": "Filter assignments by status, priority, and subject."
+          },
+          "response": []
+        },
+        {
+          "name": "4. Get Assignment Stats",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bearerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/assignments/stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "assignments", "stats"]
+            },
+            "description": "Retrieve comprehensive assignment breakdown (by status, priority, category, overdue, upcoming)."
+          },
+          "response": []
+        },
+        {
+          "name": "5. Read One Assignment",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bearerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/assignments/{{assignmentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "assignments", "{{assignmentId}}"]
+            },
+            "description": "Fetch details of a single assignment by ID."
+          },
+          "response": []
+        },
+        {
+          "name": "6. Update Assignment",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bearerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"In Progress\",\n  \"description\": \"Implemented abstract classes and interfaces, writing unit tests\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/assignments/{{assignmentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "assignments", "{{assignmentId}}"]
+            },
+            "description": "Partially update assignment fields."
+          },
+          "response": []
+        },
+        {
+          "name": "7. Delete Assignment",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bearerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/assignments/{{assignmentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "assignments", "{{assignmentId}}"]
+            },
+            "description": "Delete assignment by ID."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
